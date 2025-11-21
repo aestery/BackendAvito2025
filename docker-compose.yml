@@ -1,29 +1,33 @@
-version: '3.8'
-
 services:
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: order-pickup-api
+    build: .
+    container_name: reviewer-api
+    restart: unless-stopped
     env_file:
-      - config/.env.dev
+      - app/config/.env.dev
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
     ports:
-      - "8000:8000"
+      - "8080:8080"
     depends_on:
       - db
+    volumes:
+      - ./app:/app/app
+      - ./openapi.yml:/app/openapi.yml
 
   db:
-    image: postgres:15
-    container_name: order-pickup-db
+    image: postgres:18
+    container_name: reviewer-db
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: pickup
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+      - ./app/migrations:/docker-entrypoint-initdb.d:ro
 
 volumes:
-  pgdata:
+  postgres_data:
