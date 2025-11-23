@@ -9,7 +9,7 @@ UsersServiceResponse = NewType(
     tuple[User | None, ErrorCode | None])
 
 class UsersService:
-    def __init__(self, pool):
+    def __init__(self, pool) -> None:
         self.pool = pool
 
     async def set_is_active(
@@ -26,7 +26,9 @@ class UsersService:
             await self._set_activity(connection, user_id, is_active)
             user_info = await self._get_user(connection, user_id)
 
-            if not user_info: return UsersServiceResponse((None, None))
+            # Костыль, чтобы закрыть None варнинг. Возвращение из этой точки не ожидается.
+            if not user_info: 
+                return UsersServiceResponse((None, ErrorCode.NOT_FOUND))
 
             user = User(
                 user_id=user_id, 
