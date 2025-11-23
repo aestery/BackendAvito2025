@@ -186,7 +186,7 @@ class PullRequestService():
         )
     
     async def _get_pull_request(self, conn: Connection, pull_request_id: str):
-        """получить полную информацию о незакрытом pr"""
+        """получить полную информацию о pr"""
         return await conn.fetchval(
             """
             SELECT 

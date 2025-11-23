@@ -3,6 +3,7 @@ from typing import NewType
 from asyncpg.connection import Connection
 from app.models.error_response import ErrorCode
 from app.models.user import User
+from app.models.pull_requests import PullRequestShort
 
 UsersServiceResponse = NewType(
     "UsersServiceResponse",
@@ -39,6 +40,25 @@ class UsersService:
             
             return UsersServiceResponse((user, None))
 
+    async def get_reviews(self, user_id: str):
+        async with self.pool.acquire() as connection:
+            response = await self._get_pull_requests(connection, user_id)
+            pull_requests = []
+
+            for pr in response:
+                pull_requests.append(
+                    PullRequestShort(
+                        pull_request_id=pr['pull_request_id'],
+                        pull_request_name=pr['pull_request_name'],
+                        author_id=pr['author_id'],
+                        status=pr['status']
+                    )
+                )
+                
+            return pull_requests
+
+
+
     async def _user_exists(self, conn: Connection, user_id: str) -> bool:
         """возвращяет наличие/отсутствие пользователя в бд"""
         response = await conn.fetchval(
@@ -58,7 +78,9 @@ class UsersService:
             is_active, user_id
         )
         
-    async def _get_user(self, conn: Connection, user_id: str) -> asyncpg.Record | None:
+    async def _get_user(
+            self, conn: Connection, user_id: str
+            ) -> asyncpg.Record | None:
         return await conn.fetchrow(
             """
             SELECT users.username, users.is_active, team_members.team_name
@@ -68,4 +90,21 @@ class UsersService:
             WHERE user_id=$1
             """,
             user_id
+        )
+    
+    async def _get_pull_requests(self, conn: Connection, pull_request_id: str):
+        """получить полную информацию о pr"""
+        return await conn.fetchmany(
+            """
+            SELECT 
+                pr.pull_request_id,
+                pr.pull_request_name,
+                pr.author_id,
+                pr.status
+            FROM pull_requests pr
+            JOIN pull_request_reviewers r
+                ON pr.pull_request_id = r.pull_request_id
+            WHERE r.reviewer_id=$1
+            """,
+            pull_request_id
         )

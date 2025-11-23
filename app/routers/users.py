@@ -1,6 +1,5 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException,Query, Depends
 from app.models.tags import Tags
-from app.models.user import User
 from app.models.error_response import ErrorCode
 from app.services.dependencies import get_users_service
 from app.services.users import UsersService
@@ -9,9 +8,10 @@ from app.services.users import UsersService
 router = APIRouter(prefix="/users", tags=[Tags.USERS])
 
 @router.post("/setIsActive", status_code=200)
-async def set_is_active(user_id: str, 
-                        is_active: bool,
-                        service: UsersService = Depends(get_users_service)):
+async def set_is_active(
+    user_id: str, 
+    is_active: bool,
+    service: UsersService = Depends(get_users_service)):
     """Установить флаг активности пользователя"""
     result, error = await service.set_is_active(user_id, is_active)
 
@@ -25,4 +25,13 @@ async def set_is_active(user_id: str,
         )
     
     return {"user": result}
+
+@router.get("/getReview", status_code=200)
+def get_assigned_pull_requests(
+    user_id: str = Query(...),
+    service: UsersService = Depends(get_users_service)):
+    """Получить PR'ы, где пользователь назначен ревьювером"""
+    result = service.get_reviews(user_id)
+
+    return {"user_id": user_id, "pull_equests": result}
 
