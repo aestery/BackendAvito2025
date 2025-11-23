@@ -1,5 +1,4 @@
 import asyncpg
-from asyncpg import UniqueViolationError
 from asyncpg.connection import Connection
 from app.models.error_response import ErrorCode
 from app.models.team import Team, TeamMember
@@ -44,8 +43,8 @@ class TeamService():
 
     async def _team_exist(self, conn: Connection, team_name: str) -> bool:
         """возвращяет наличие/отсутствие команды в бд"""
-        response = await conn.fetchrow(
-            "SELECT team_name FROM teams WHERE team_name=$1",
+        response = await conn.fetchval(
+            "SLECT EXISTS (SELECT 1 FROM teams WHERE team_name=$1)",
             team_name
         )
         return bool(response)
