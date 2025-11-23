@@ -1,7 +1,7 @@
 import asyncpg
 from asyncpg.connection import Connection
-from models.error_response import ErrorCode
-from models.team import Team, TeamMember
+from app.models.error_response import ErrorCode
+from app.models.team import Team, TeamMember
 
 class TeamService():
     def __init__(self, pool: asyncpg.Pool) -> None:

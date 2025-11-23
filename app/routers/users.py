@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException,Query, Depends
-from models.tags import Tags
-from models.error_response import ErrorCode
-from services.dependencies import get_users_service
-from services.users import UsersService
+from app.models.tags import Tags
+from app.models.error_response import ErrorCode
+from app.services.dependencies import get_users_service
+from app.services.users import UsersService
 
 
 router = APIRouter(prefix="/users", tags=[Tags.USERS])

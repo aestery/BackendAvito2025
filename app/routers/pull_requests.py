@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends
-from models.tags import Tags
-from models.error_response import ErrorCode
-from services.dependencies import get_pull_request_service
-from services.pull_requests import PullRequestService
+from app.models.tags import Tags
+from app.models.error_response import ErrorCode
+from app.services.dependencies import get_pull_request_service
+from app.services.pull_requests import PullRequestService
 
 
 router = APIRouter(prefix="/pullRequest", tags=[Tags.PULL_REQUESTS])

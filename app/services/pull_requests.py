@@ -1,8 +1,8 @@
 import asyncpg
 from typing import NewType
 from asyncpg.connection import Connection
-from models.error_response import ErrorCode
-from models.pull_requests import PullRequest, PullRequestStatus
+from app.models.error_response import ErrorCode
+from app.models.pull_requests import PullRequest, PullRequestStatus
 
 
 PrResponse = NewType(

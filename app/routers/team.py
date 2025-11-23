@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
-from models.tags import Tags
-from models.team import Team
-from models.error_response import ErrorCode
-from services.dependencies import get_team_service
-from services.team import TeamService
+from app.models.tags import Tags
+from app.models.team import Team
+from app.models.error_response import ErrorCode
+from app.services.dependencies import get_team_service
+from app.services.team import TeamService
 
 
 router = APIRouter(prefix="/team", tags=[Tags.TEAMS])
