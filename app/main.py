@@ -3,7 +3,7 @@ from typing import Any
 from fastapi import FastAPI
 from app.routers.api import router
 from app.models.tags import Tags
-from app.services.database import init_pool, close_pool
+from app.services.database import db_pool
 from contextlib import asynccontextmanager
 
 
@@ -19,9 +19,9 @@ DATABASE_URL = "postgresql://postgres@localhost/postgres"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_pool(DATABASE_URL)
+    app.state.pool = await db_pool.connect(DATABASE_URL)
     yield
-    await close_pool()
+    await db_pool.close()
 
 app = FastAPI(
     title="PR Reviewer Assignment Service",

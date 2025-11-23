@@ -1,13 +1,16 @@
 import asyncpg
 
-pool: asyncpg.Pool | None = None
+class DBPool:
+    @property
+    def get_pool(self) -> asyncpg.Pool:
+        return self.pool
 
-async def init_pool(dsn: str):
-    global pool
-    pool = await asyncpg.create_pool(dsn)
+    async def connect(self, dsn: str):
+        if self.pool == None: 
+            self.pool: asyncpg.Pool = await asyncpg.create_pool(dsn)
 
-async def close_pool():
-    global pool
-    if pool:
-        await pool.close()
-        pool = None
+    async def close(self):
+        if self.pool: 
+            await self.pool.close()
+
+db_pool = DBPool()
