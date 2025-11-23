@@ -6,8 +6,7 @@ class DBPool:
         return self.pool
 
     async def connect(self, dsn: str):
-        if self.pool == None: 
-            self.pool: asyncpg.Pool = await asyncpg.create_pool(dsn)
+        self.pool: asyncpg.Pool = await asyncpg.create_pool(dsn)
 
     async def close(self):
         if self.pool: 
