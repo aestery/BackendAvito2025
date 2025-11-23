@@ -1,9 +1,9 @@
 import asyncpg
 from typing import NewType
 from asyncpg.connection import Connection
-from app.models.error_response import ErrorCode
-from app.models.user import User
-from app.models.pull_requests import PullRequestShort
+from models.error_response import ErrorCode
+from models.user import User
+from models.pull_requests import PullRequestShort
 
 UsersServiceResponse = NewType(
     "UsersServiceResponse",

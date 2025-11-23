@@ -4,7 +4,7 @@ services:
     container_name: reviewer-api
     restart: unless-stopped
     env_file:
-      - app/config/.env.dev
+      - app/.env
     environment:
       DATABASE_URL: ${DATABASE_URL}
     ports:
@@ -16,7 +16,7 @@ services:
       - ./openapi.yml:/app/openapi.yml
 
   db:
-    image: postgres:18
+    image: postgres:16
     container_name: reviewer-db
     restart: unless-stopped
     environment:

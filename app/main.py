@@ -1,9 +1,10 @@
 import uvicorn
 from typing import Any
 from fastapi import FastAPI
-from app.routers.api import router
-from app.models.tags import Tags
-from app.services.database import db_pool
+from decouple import config
+from routers.api import router
+from models.tags import Tags
+from services.database import db_pool
 from contextlib import asynccontextmanager
 
 
@@ -14,12 +15,11 @@ tags: list[dict[str, Any]] = [
     {"name": Tags.HEALTH},
 ]
 
-#TODO: move to .env
-DATABASE_URL = "postgresql://postgres@localhost/postgres"
+DATABASE_URL = config("DATABASE_URL")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.pool = await db_pool.connect(DATABASE_URL)
+    app.state.pool = await db_pool.connect(DATABASE_URL) #type: ignore
     yield
     await db_pool.close()
 

@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.routers import team, users
+from routers import team, users
 
 
 router = APIRouter()
