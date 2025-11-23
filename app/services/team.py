@@ -44,7 +44,7 @@ class TeamService():
     async def _team_exist(self, conn: Connection, team_name: str) -> bool:
         """возвращяет наличие/отсутствие команды в бд"""
         response = await conn.fetchval(
-            "SLECT EXISTS (SELECT 1 FROM teams WHERE team_name=$1)",
+            "SELECT EXISTS (SELECT 1 FROM teams WHERE team_name=$1)",
             team_name
         )
         return bool(response)
