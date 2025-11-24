@@ -41,7 +41,7 @@ class PullRequestService():
                 )
             
             reviewers = await self._set_revewers(
-                connection, pull_request_id, author_id)
+                connection, author_id, pull_request_id)
             
             pull_request = PullRequest(
                 pull_request_id=pull_request_id,
@@ -60,23 +60,8 @@ class PullRequestService():
             if not pr_exists:
                 return PrResponse((None, ErrorCode.NOT_FOUND))
             
-            request_info = await self._update_status_to_merged(
-                connection, pull_request_id)
-            reviewers = await self._get_reviewers(connection, pull_request_id)
-
-            if request_info == None: 
-                return PrResponse((None, ErrorCode.NOT_FOUND))
-
-            pull_request = PullRequest(
-                pull_request_id=request_info['pull_request_id'],
-                pull_request_name=request_info['pull_request_name'],
-                author_id=request_info['author_id'],
-                status=request_info['status'],
-                assigned_reviewer=[r['reviewer_id'] for r in reviewers],
-                mergedAt=request_info['merged_at']
-            )
-            
-            return PrResponse((pull_request, None))
+            await self._update_status_to_merged(connection, pull_request_id)
+            return await self._return_pull_request(connection, pull_request_id)
     
     async def reassign_reviwer(self, pull_request_id: str, old_user_id: str):
         async with self.pool.acquire() as connection:
@@ -100,26 +85,28 @@ class PullRequestService():
             new_reviewer = await self._reassign_reviewer(
                 connection, pull_request_id, old_user_id)
             
-            if not new_reviewer:
+            if new_reviewer == old_user_id:
                 return PrResponse((None, ErrorCode.NO_CANDIDATE))
             
-            request_info = await self._get_pull_request(connection, pull_request_id)
-            pr_reviewers = await self._get_reviewers(connection, pull_request_id)
+            return await self._return_pull_request(connection, pull_request_id)
+    
+    async def _return_pull_request(
+            self, conn: Connection, pull_request_id: str) -> PrResponse:
+        """Возвращает пул реквест и, если не найден, ошибку"""
+        request_info = await self._get_pull_request(conn, pull_request_id)
+        pr_reviewers = await self._get_reviewers(conn, pull_request_id)
 
-            # Костыль, чтобы закрыть None варнинг. Возвращение из этой точки не ожидается.
-            if not request_info:
-                return PrResponse((None, ErrorCode.NOT_FOUND))
+        if not request_info:
+            return PrResponse((None, ErrorCode.NOT_FOUND))
 
-            pull_request = PullRequest(
-                pull_request_id=request_info['pull_request_id'],
-                pull_request_name=request_info['pull_request_name'],
-                author_id=request_info['author_id'],
-                status=request_info['status'],
-                assigned_reviewer=[r['reviewer_id'] for r in pr_reviewers],
-            )
-
-            return PrResponse((pull_request, None))
-            
+        pull_request = PullRequest(
+            pull_request_id=pull_request_id,
+            pull_request_name=request_info['pull_request_name'],
+            author_id=request_info['author_id'],
+            status=request_info['status'],
+            assigned_reviewer=[r['reviewer_id'] for r in pr_reviewers],
+        )
+        return PrResponse((pull_request, None))
 
     async def _user_exists(self, conn: Connection, user_id: str) -> bool:
         """возвращяет наличие/отсутствие пользователя в бд"""
@@ -187,17 +174,18 @@ class PullRequestService():
     
     async def _get_pull_request(self, conn: Connection, pull_request_id: str):
         """получить полную информацию о pr"""
-        return await conn.fetchval(
+        return await conn.fetchrow(
             """
             SELECT 
                 pr.pull_request_name,
                 pr.author_id,
                 pr.status,
-                pr.created_at
+                pr.created_at,
+                pr.merged_at
             FROM pull_requests pr
             LEFT JOIN pull_request_reviewers r
                 ON pr.pull_request_id = r.pull_request_id
-            WHERE pull_request_id=$1
+            WHERE pr.pull_request_id=$1
             GROUP BY
                 pr.pull_request_id,
                 pr.pull_request_name,
@@ -230,13 +218,12 @@ class PullRequestService():
     async def _update_status_to_merged(
             self, conn: Connection, pull_request_id: str):
         """изменяеит статус пул реквеста на MERGED"""
-        return await conn.fetchrow(
+        await conn.execute(
             """
             UPDATE pull_requests
             SET status=$1, merged_at=NOW()
             WHERE pull_request_id=$2
-            AND status != $1
-            RETURNING pull_request_name, author_id, status, created_at, merged_at
+                AND status != $1
             """,
             PullRequestStatus.MERGED.value, pull_request_id
         )
@@ -261,7 +248,6 @@ class PullRequestService():
                 AND tm2.user_id != $2        
                 AND u.is_active = TRUE
             LIMIT $3     
-            ON CONFLICT DO NOTHING;
             RETURNING reviewer_id                 
             """,
             pull_request_id, pr_author_id, limit
@@ -275,18 +261,27 @@ class PullRequestService():
         return await conn.fetchval(
             """
             UPDATE pull_request_reviewers r
-            SET reviewer_id = (
-                SELECT tm2.user_id
+            SET reviewer_id = COALESCE(
+                (
+                SELECT tm.user_id
                 FROM team_members tm
                 JOIN team_members tm2
                     ON tm.team_name = tm2.team_name
-                JOIN user u
-                    ON tm.user_id = u.user_id
-                WHERE tm.user_id = $author_id
-                    AND tm2.user_id != $author_id
+                JOIN users u
+                    ON tm2.user_id = u.user_id
+                LEFT JOIN pull_request_reviewers prr
+                    ON tm2.user_id = prr.reviewer_id
+                LEFT JOIN pull_requests pr
+                    ON prr.pull_request_id = pr.pull_request_id
+                WHERE prr.pull_request_id = $1
                     AND tm2.user_id != $2
-                    AND u.is_active =  TRUE
+                    AND tm.user_id != $2
+                    AND tm.user_id != pr.author_id
+                    AND tm.user_id != prr.reviewer_id
+                ORDER BY RANDOM()
                 LIMIT 1
+                ),
+                $2
             )
             WHERE r.pull_request_id=$1
                 AND r.reviewer_id=$2

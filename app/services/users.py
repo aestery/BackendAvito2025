@@ -83,11 +83,11 @@ class UsersService:
             ) -> asyncpg.Record | None:
         return await conn.fetchrow(
             """
-            SELECT users.username, users.is_active, team_members.team_name
-            FROM users
-            JOIN team_members
-            ON users.user_id = team_members.user_id
-            WHERE user_id=$1
+            SELECT u.username, u.is_active, tm.team_name
+            FROM users u
+            JOIN team_members tm
+                ON u.user_id = tm.user_id
+            WHERE u.user_id=$1
             """,
             user_id
         )

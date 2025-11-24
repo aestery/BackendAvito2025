@@ -53,8 +53,10 @@ class TeamService():
         """возвращает все строки с членами команды team_name"""
         return await conn.fetch(
             """
-            SELECT user_id, user_name, is_active 
-            FROM team_members 
+            SELECT u.user_id, u.username, u.is_active 
+            FROM users u
+            JOIN team_members tm
+                ON tm.user_id = u.user_id
             WHERE team_name=$1
             """,
             team_name
