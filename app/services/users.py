@@ -57,8 +57,6 @@ class UsersService:
                 
             return pull_requests
 
-
-
     async def _user_exists(self, conn: Connection, user_id: str) -> bool:
         """возвращяет наличие/отсутствие пользователя в бд"""
         response = await conn.fetchval(
@@ -92,9 +90,9 @@ class UsersService:
             user_id
         )
     
-    async def _get_pull_requests(self, conn: Connection, pull_request_id: str):
+    async def _get_pull_requests(self, conn: Connection, user_id: str):
         """получить полную информацию о pr"""
-        return await conn.fetchmany(
+        return await conn.fetch(
             """
             SELECT 
                 pr.pull_request_id,
@@ -102,9 +100,9 @@ class UsersService:
                 pr.author_id,
                 pr.status
             FROM pull_requests pr
-            JOIN pull_request_reviewers r
-                ON pr.pull_request_id = r.pull_request_id
-            WHERE r.reviewer_id=$1
+            JOIN pull_request_reviewers prr
+                ON pr.pull_request_id = prr.pull_request_id
+            WHERE prr.reviewer_id=$1
             """,
-            pull_request_id
+            user_id
         )

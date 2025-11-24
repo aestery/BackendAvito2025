@@ -27,11 +27,11 @@ async def set_is_active(
     return {"user": result}
 
 @router.get("/getReview", status_code=200)
-def get_assigned_pull_requests(
+async def get_assigned_pull_requests(
     user_id: str = Query(...),
     service: UsersService = Depends(get_users_service)):
     """Получить PR'ы, где пользователь назначен ревьювером"""
-    result = service.get_reviews(user_id)
+    result = await service.get_reviews(user_id)
 
     return {"user_id": user_id, "pull_equests": result}
 
