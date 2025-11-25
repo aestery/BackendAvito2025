@@ -6,4 +6,14 @@
 
 ## Сервис назначения ревьюеров для Pull Request’ов
 
+### Как запустить
 Для запуска необходимо выполнить команду ```docker-compose up``` соответственно иметь установленными docker и git, чтобы клонировать репозиторий. Работоспособность проверялась на WSL:UBUNTU.
+
+
+### Новые горизонты
+
+- Load test
+- Add deactivation
+- Integrated e2e test
+- Health end point
+- polish with linter?

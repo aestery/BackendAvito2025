@@ -25,7 +25,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="PR Reviewer Assignment Service",
-    version="0.0.1",
+    version="0.1.0",
     openapi_tags=tags,
     lifespan=lifespan
     )

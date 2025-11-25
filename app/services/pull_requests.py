@@ -5,6 +5,7 @@ from app.models.error_response import ErrorCode
 from app.models.pull_requests import PullRequest, PullRequestStatus
 
 
+#TODO switch to pydantic for consistensy
 PrResponse = NewType(
     "PrResponse", 
     tuple[PullRequest | None, ErrorCode | None]
@@ -63,32 +64,36 @@ class PullRequestService():
             await self._update_status_to_merged(connection, pull_request_id)
             return await self._return_pull_request(connection, pull_request_id)
     
-    async def reassign_reviwer(self, pull_request_id: str, old_user_id: str):
+    #TODO adjust response when PrResponse is Pydantic
+    async def reassign_reviwer(
+            self, pull_request_id: str, old_user_id: str
+            ) -> tuple[PullRequest|None,ErrorCode|None,str|None]:
         async with self.pool.acquire() as connection:
             pr_exists = await self._pull_request_exists(connection, pull_request_id)
             user_exists = await self._user_exists(connection, old_user_id)
 
             if not pr_exists or not user_exists:
-                return PrResponse((None, ErrorCode.NOT_FOUND))
+                return (None, ErrorCode.NOT_FOUND, None)
             
             status = await self._get_status(connection, pull_request_id)
 
             if status == PullRequestStatus.MERGED.value:
-                return PrResponse((None, ErrorCode.PR_MERGED))
+                return (None, ErrorCode.PR_MERGED, None)
             
             is_reviewer = await self._is_reviewer(
                 connection, old_user_id, pull_request_id)
 
             if is_reviewer == False:
-                return PrResponse((None, ErrorCode.NOT_ASSIGNED))
+                return (None, ErrorCode.NOT_ASSIGNED, None)
             
             new_reviewer = await self._reassign_reviewer(
                 connection, pull_request_id, old_user_id)
             
             if new_reviewer == old_user_id:
-                return PrResponse((None, ErrorCode.NO_CANDIDATE))
+                return (None, ErrorCode.NO_CANDIDATE, None)
             
-            return await self._return_pull_request(connection, pull_request_id)
+            pr, error = await self._return_pull_request(connection, pull_request_id)
+            return (pr, error, new_reviewer)
     
     async def _return_pull_request(
             self, conn: Connection, pull_request_id: str) -> PrResponse:

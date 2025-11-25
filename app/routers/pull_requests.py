@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from app.models.tags import Tags
 from app.models.error_response import ErrorCode
+from app.routers.errors import ErrorResponse
 from app.services.dependencies import get_pull_request_service
 from app.services.pull_requests import PullRequestService
 
@@ -20,21 +21,17 @@ async def create_pull_request(
         )
 
     if error == ErrorCode.NOT_FOUND:
-        raise HTTPException(
+        return ErrorResponse(
             status_code=404,
-            detail={
-                "code": error.value,
-                "message": "user, team or request is not found"
-            }
+            code=error.value,
+            message="user, team or request is not found"
         )
     
     if error == ErrorCode.PR_EXISTS:
-        raise HTTPException(
+        return ErrorResponse(
             status_code=409,
-            detail={
-                "code": error.value,
-                "message": "PR id already exists"
-            }
+            code=error.value,
+            message="PR id already exists"
         )
     
     return {"pr": result}
@@ -47,12 +44,10 @@ async def set_pr_as_merged(
     result, error = await service.merge_pull_request(pull_request_id)
 
     if error == ErrorCode.NOT_FOUND:
-        raise HTTPException(
+        return ErrorResponse(
             status_code=404,
-            detail={
-                "code": error.value,
-                "message": "PR not found"
-            }
+            code=error.value,
+            message="PR not found"
         )
     
     return {"pr": result}
@@ -63,42 +58,34 @@ async def reassign_reviewer(
     old_user_id: str,
     service: PullRequestService = Depends(get_pull_request_service)):
     """Переназначить конкретного ревьювера на другого из его команды"""
-    result, error = await service.reassign_reviwer(pull_request_id, old_user_id)
+    result, error, new_reviewer = await service.reassign_reviwer(pull_request_id, old_user_id)
 
     if error == ErrorCode.NOT_FOUND:
-        raise HTTPException(
+        return ErrorResponse(
             status_code=404,
-            detail={
-                "code": error.value,
-                "message": "user, team or request is not found"
-            }
+            code=error.value,
+            message="user, team or request is not found"
         )
     
     if error == ErrorCode.PR_MERGED:
-        raise HTTPException(
+        return ErrorResponse(
             status_code=409,
-            detail={
-                "code": error.value,
-                "message": "cannot reassign on merged PR"
-            }
+            code=error.value,
+            message="cannot reassign on merged PR"
         )
     
     if error == ErrorCode.NOT_ASSIGNED:
-        raise HTTPException(
+        return ErrorResponse(
             status_code=409,
-            detail={
-                "code": error.value,
-                "message": "reviewer is not assigned to this PR"
-            }
+            code=error.value,
+            message="reviewer is not assigned to this PR"
         )
     
     if error == ErrorCode.NO_CANDIDATE:
-        raise HTTPException(
+        return ErrorResponse(
             status_code=409,
-            detail={
-                "code": error.value,
-                "message": "no active replacement candidate in team"
-            }
+            code=error.value,
+            message="no active replacement candidate in team"
         )
     
-    return {"pr": result} 
+    return {"pr": result, "replaced_by": new_reviewer} 
