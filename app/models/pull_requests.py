@@ -22,3 +22,15 @@ class PullRequestShort(BaseModel):
     pull_request_name: str
     author_id: str
     status: PullRequestStatus
+
+class PrCreateSchema(BaseModel):
+    pull_request_id: str    
+    pull_request_name: str
+    author_id: str
+
+class PrMergeSchema(BaseModel):
+    pull_request_id: str
+
+class PrReassignSchema(BaseModel):
+    pull_request_id: str
+    old_user_id: str

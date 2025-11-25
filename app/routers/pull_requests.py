@@ -1,6 +1,14 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import (
+    APIRouter, 
+    Depends
+)
 from app.models.tags import Tags
 from app.models.error_response import ErrorCode
+from app.models.pull_requests import (
+    PrCreateSchema,
+    PrMergeSchema,
+    PrReassignSchema
+)
 from app.routers.errors import ErrorResponse
 from app.services.dependencies import get_pull_request_service
 from app.services.pull_requests import PullRequestService
@@ -10,14 +18,14 @@ router = APIRouter(prefix="/pullRequest", tags=[Tags.PULL_REQUESTS])
 
 @router.post("/create", status_code=201)
 async def create_pull_request(
-    pull_request_id: str, 
-    pull_request_name: str, 
-    author_id: str,
+    schema: PrCreateSchema,
     service: PullRequestService = Depends(get_pull_request_service)
     ):
     """Создаёт PR и автоматически назначает до 2 ревьюверов из команды автора"""
     result, error = await service.create_pull_request(
-        author_id, pull_request_id, pull_request_name
+        schema.author_id, 
+        schema.pull_request_id, 
+        schema.pull_request_name
         )
 
     if error == ErrorCode.NOT_FOUND:
@@ -38,10 +46,10 @@ async def create_pull_request(
 
 @router.post("/merge", status_code=200)
 async def set_pr_as_merged(
-    pull_request_id: str, 
+    schema: PrMergeSchema, 
     service: PullRequestService = Depends(get_pull_request_service)):
     """Помечает PR как MERGED (идемпотентная операция)"""
-    result, error = await service.merge_pull_request(pull_request_id)
+    result, error = await service.merge_pull_request(schema.pull_request_id)
 
     if error == ErrorCode.NOT_FOUND:
         return ErrorResponse(
@@ -54,11 +62,13 @@ async def set_pr_as_merged(
 
 @router.post("/reassign", status_code=200)
 async def reassign_reviewer(
-    pull_request_id: str, 
-    old_user_id: str,
+    schema: PrReassignSchema,
     service: PullRequestService = Depends(get_pull_request_service)):
     """Переназначить конкретного ревьювера на другого из его команды"""
-    result, error, new_reviewer = await service.reassign_reviwer(pull_request_id, old_user_id)
+    result, error, new_reviewer = await service.reassign_reviwer(
+        schema.pull_request_id, 
+        schema.old_user_id
+        )
 
     if error == ErrorCode.NOT_FOUND:
         return ErrorResponse(
