@@ -1,9 +1,13 @@
-import random
-from locust import TaskSet, task
+from locust import ( 
+    TaskSet, 
+    task
+)
 from locust.contrib.fasthttp import ResponseContextManager
-from app.models.user import User
 from app.models.error_response import ErrorCode
-from tests.load_test.scenarios.utils import ScenarioParameters, is_expected_error
+from tests.load_test.scenarios.utils import (
+    ScenarioParameters, 
+    is_expected_error
+)
 
 class UserScenario(TaskSet):
     _base_route = "/users"
@@ -14,7 +18,7 @@ class UserScenario(TaskSet):
         user_id = self._utils.get_user_id()
         self._get_review_handler(user_id=user_id)
 
-    @task(5)
+    @task(3)
     def set_activity(self):
         user_id = self._utils.get_user_id()
         is_active = self._utils.get_status()

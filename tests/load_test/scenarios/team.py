@@ -1,9 +1,14 @@
-import random
-from locust import TaskSet, task
+from locust import ( 
+    TaskSet, 
+    task
+)
 from locust.contrib.fasthttp import ResponseContextManager
 from app.models.team import Team, TeamMember
 from app.models.error_response import ErrorCode
-from tests.load_test.scenarios.utils import ScenarioParameters, is_expected_error
+from tests.load_test.scenarios.utils import (
+    ScenarioParameters, 
+    is_expected_error
+)
 
 
 class TeamScenario(TaskSet):
