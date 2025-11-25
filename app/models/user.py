@@ -6,3 +6,7 @@ class User(BaseModel):
     username: str
     team_name: str
     is_active: bool
+
+class UserStatusUpdate(BaseModel):
+    user_id: str
+    is_active: bool

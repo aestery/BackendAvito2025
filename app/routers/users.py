@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException,Query, Depends
 from app.models.tags import Tags
 from app.models.error_response import ErrorCode
+from app.models.user import UserStatusUpdate
 from app.routers.errors import ErrorResponse
 from app.services.dependencies import get_users_service
 from app.services.users import UsersService
@@ -10,11 +11,10 @@ router = APIRouter(prefix="/users", tags=[Tags.USERS])
 
 @router.post("/setIsActive", status_code=200)
 async def set_is_active(
-    user_id: str, 
-    is_active: bool,
+    status_update: UserStatusUpdate,
     service: UsersService = Depends(get_users_service)):
     """Установить флаг активности пользователя"""
-    result, error = await service.set_is_active(user_id, is_active)
+    result, error = await service.set_is_active(status_update)
 
     if error == ErrorCode.NOT_FOUND:
         return ErrorResponse(

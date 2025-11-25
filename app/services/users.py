@@ -3,6 +3,7 @@ from typing import NewType
 from asyncpg.connection import Connection
 from app.models.error_response import ErrorCode
 from app.models.user import User
+from app.models.user import UserStatusUpdate
 from app.models.pull_requests import PullRequestShort
 
 UsersServiceResponse = NewType(
@@ -15,24 +16,24 @@ class UsersService:
 
     async def set_is_active(
             self, 
-            user_id: str, 
-            is_active: bool) -> UsersServiceResponse:
-        
+            user_status: UserStatusUpdate
+            ) -> UsersServiceResponse:
         async with self.pool.acquire() as connection:
-            is_user = await self._user_exists(connection, user_id)
+            is_user = await self._user_exists(connection, user_status.user_id)
 
             if not is_user:
                 return UsersServiceResponse((None, ErrorCode.NOT_FOUND))
             
-            await self._set_activity(connection, user_id, is_active)
-            user_info = await self._get_user(connection, user_id)
+            await self._set_activity(
+                connection, user_status.user_id, user_status.is_active)
+            user_info = await self._get_user(connection, user_status.user_id)
 
             # Костыль, чтобы закрыть None варнинг. Возвращение из этой точки не ожидается.
             if not user_info: 
                 return UsersServiceResponse((None, ErrorCode.NOT_FOUND))
 
             user = User(
-                user_id=user_id, 
+                user_id=user_status.user_id, 
                 username=user_info['username'],
                 team_name=user_info['team_name'],
                 is_active=user_info['is_active']

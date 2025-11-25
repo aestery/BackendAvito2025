@@ -1,7 +1,10 @@
-from locust import FastHttpUser, task, between
+from locust import FastHttpUser, task, between, constant_pacing
 from tests.load_test.scenarios.team import TeamScenario
+from tests.load_test.scenarios.users import UserScenario
 
 class TesterUser(FastHttpUser):
+        wait_time = constant_pacing(1)
         tasks = {
-            TeamScenario: 10
+            TeamScenario: 1,
+            UserScenario: 10
         }
